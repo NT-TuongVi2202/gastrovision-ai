@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pillow
+numpy
+torch
+torchvision
+tensorflow
+scikit-learn>=1.3
+joblib>=1.3

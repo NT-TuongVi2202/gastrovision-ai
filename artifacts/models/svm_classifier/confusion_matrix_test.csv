@@ -1,0 +1,28 @@
+true\pred,Accessory tools,Angiectasia,Barrett's esophagus,Blood in lumen,Cecum,Colon diverticula,Colon polyps,Colorectal cancer,Duodenal bulb,Dyed-lifted-polyps,Dyed-resection-margins,Erythema,Esophageal varices,Esophagitis,Gastric polyps,Gastroesophageal_junction_normal z-line,Ileocecal valve,Mucosal inflammation large bowel,Normal esophagus,Normal mucosa and vascular pattern in the large bowel,Normal stomach,Pylorus,Resected polyps,Resection margins,Retroflex rectum,Small bowel_terminal ileum,Ulcer
+Accessory tools,163,0,0,2,0,0,13,0,0,1,2,0,0,0,0,0,1,0,0,8,0,0,0,0,0,0,0
+Angiectasia,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0
+Barrett's esophagus,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,5,0,0,5,0,2,0,0,0,0,0,0
+Blood in lumen,3,0,0,13,0,0,0,2,0,0,0,0,0,1,0,1,0,0,0,3,0,1,0,0,0,2,0
+Cecum,0,0,0,0,0,1,2,0,0,0,0,0,0,0,0,0,0,0,0,12,1,0,0,0,0,1,0
+Colon diverticula,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0
+Colon polyps,13,0,0,0,0,2,29,8,0,2,4,0,0,0,0,0,3,0,0,58,2,2,0,0,0,0,0
+Colorectal cancer,8,0,0,2,0,0,1,6,0,0,2,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0
+Duodenal bulb,0,0,0,0,0,0,0,0,22,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,6,0
+Dyed-lifted-polyps,5,0,0,0,0,0,1,0,0,9,2,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0
+Dyed-resection-margins,6,0,0,0,0,0,0,0,0,3,27,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+Erythema,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0
+Esophageal varices,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Esophagitis,2,0,1,2,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1,1,0,0,0,0,0
+Gastric polyps,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,4,3,0,0,0,1,0
+Gastroesophageal_junction_normal z-line,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,42,0,0,0,0,5,1,0,0,0,0,0
+Ileocecal valve,5,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,7,0,0,15,1,0,0,0,0,0,0
+Mucosal inflammation large bowel,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0
+Normal esophagus,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,13,0,0,0,0,0,0,0,0
+Normal mucosa and vascular pattern in the large bowel,19,0,0,0,0,1,8,0,1,0,0,0,0,0,0,0,2,0,0,183,2,0,0,0,0,4,0
+Normal stomach,13,0,0,0,0,0,2,0,7,0,1,0,0,0,0,2,0,0,0,1,103,11,0,0,1,4,0
+Pylorus,0,0,0,1,0,0,2,0,8,0,0,0,0,0,0,1,0,0,0,0,3,41,0,0,0,3,0
+Resected polyps,8,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1,0
+Resection margins,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0
+Retroflex rectum,4,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,2,0,0
+Small bowel_terminal ileum,5,0,0,0,0,0,1,0,3,0,0,0,0,0,0,1,0,0,0,8,6,8,0,0,0,95,0
+Ulcer,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0

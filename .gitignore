@@ -1,0 +1,25 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.env.local
+storage/uploads/*
+storage/results/*
+!storage/uploads/.gitkeep
+!storage/results/.gitkeep
+
+# Artifacts — large binaries are not tracked.
+# Small text artifacts (labels, configs, metrics) are kept for reproducibility.
+artifacts/models/**/*.pkl
+artifacts/models/**/*.keras
+artifacts/models/**/*.npy
+artifacts/models/**/*.h5
+artifacts/models/**/*.pt
+artifacts/models/**/*.pth
+!artifacts/models/svm_classifier/labels.json
+!artifacts/models/svm_classifier/metrics.json
+!artifacts/models/segmentation/training_config.json
+# Python virtual environments
+**/.venv/
+__pycache__/
+*.pyc

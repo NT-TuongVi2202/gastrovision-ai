@@ -1,0 +1,36 @@
+[2m3:12:50 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+D:/đồ án_archive/gastrovision-ai/frontend/src/components/ResultPanel.tsx:166:79: ERROR: Expected ")" but found "n"
+  Plugin: [35mvite:esbuild[39m
+  File: [36mD:/đồ án_archive/gastrovision-ai/frontend/src/components/ResultPanel.tsx[39m:166:79
+[33m  
+  [33mExpected ")" but found "n"[33m
+  164 |          </div>
+  165 |        )}
+  166 |  ...e="image-pair ai-image-grid">`r`n        {previewUrl && (`r`n          <figure>`r`n            <img src={previewUr...
+      |                                                                 ^
+  167 |          <div className="quiet-note">
+  168 |            <CircleAlert size={18} />
+  [39m
+[2m3:12:50 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+D:/đồ án_archive/gastrovision-ai/frontend/src/components/ResultPanel.tsx:166:79: ERROR: Expected ")" but found "n"[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mD:/đồ án_archive/gastrovision-ai/frontend/src/components/ResultPanel.tsx[39m:166:79
+[33m  
+  [33mExpected ")" but found "n"[33m
+  164 |          </div>
+  165 |        )}
+  166 |  ...e="image-pair ai-image-grid">`r`n        {previewUrl && (`r`n          <figure>`r`n            <img src={previewUr...
+      |                                                                 ^
+  167 |          <div className="quiet-note">
+  168 |            <CircleAlert size={18} />
+  [39m
+      at failureErrorWithLog (D:\đồ án_archive\gastrovision-ai\frontend\node_modules\esbuild\lib\main.js:1748:15)
+      at D:\đồ án_archive\gastrovision-ai\frontend\node_modules\esbuild\lib\main.js:1017:50
+      at responseCallbacks.<computed> (D:\đồ án_archive\gastrovision-ai\frontend\node_modules\esbuild\lib\main.js:884:9)
+      at handleIncomingPacket (D:\đồ án_archive\gastrovision-ai\frontend\node_modules\esbuild\lib\main.js:939:12)
+      at Socket.readFromStdout (D:\đồ án_archive\gastrovision-ai\frontend\node_modules\esbuild\lib\main.js:862:7)
+      at Socket.emit (node:events:509:28)
+      at addChunk (node:internal/streams/readable:563:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
+      at Readable.push (node:internal/streams/readable:394:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
