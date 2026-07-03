@@ -23,3 +23,15 @@ artifacts/models/**/*.pth
 **/.venv/
 __pycache__/
 *.pyc
+
+# Large files and datasets
+*.zip
+*.7z
+*.rar
+backend/storage/datasets/gastrovision/extracted/
+backend/storage/logs/
+backend/.venv/
+frontend/node_modules/
+.DS_Store
+*.pkl
+bao_cao_images/
