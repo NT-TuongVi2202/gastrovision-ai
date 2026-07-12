@@ -186,20 +186,28 @@ function ClinicalAssessmentPanel({ assessment }: { assessment: ClinicalAssessmen
 }
 
 function ImageEvidencePanel({ result, previewUrl }: { result: PredictionResult; previewUrl?: string | null }) {
-  const hasSegmentation = Boolean(result.polyp.overlay_base64 || result.polyp.mask_base64);
-  const imageCount = [previewUrl, result.polyp.overlay_base64, result.polyp.mask_base64].filter(Boolean).length;
+  const inflammation = result.inflammation;
+  const hasPolypSegmentation = Boolean(result.polyp.overlay_base64 || result.polyp.mask_base64);
+  const hasInflammationHighlight = Boolean(inflammation?.overlay_base64 || inflammation?.mask_base64);
+  const hasSegmentation = hasPolypSegmentation || hasInflammationHighlight;
+  const overlaySrc = result.polyp.overlay_base64 || inflammation?.overlay_base64 || null;
+  const maskSrc = result.polyp.mask_base64 || inflammation?.mask_base64 || null;
+  const areaRatio = result.polyp.area_ratio ?? inflammation?.area_ratio ?? null;
+  const imageCount = [previewUrl, overlaySrc, maskSrc].filter(Boolean).length;
+  const title = hasPolypSegmentation ? "Phân đoạn DeepLabV3+" : hasInflammationHighlight ? "Khoanh vùng viêm tham khảo" : "Ảnh chẩn đoán";
+  const subtitle = hasSegmentation ? "Ảnh gốc, vùng khoanh và mask" : "Ảnh gốc";
 
   return (
     <div className={`ai-image-panel result-section ${hasSegmentation ? "segmentation-ready" : ""}`}>
       <div className="section-title-row">
-        <h3 className="section-title">{hasSegmentation ? "Phân đoạn DeepLabV3+" : "Ảnh chẩn đoán"}</h3>
-        <span><ImageIcon size={14} />{hasSegmentation ? "Ảnh gốc, vùng khoanh và mask" : "Ảnh gốc"}</span>
+        <h3 className="section-title">{title}</h3>
+        <span><ImageIcon size={14} />{subtitle}</span>
       </div>
 
-      {result.polyp.has_polyp ? (
+      {result.polyp.has_polyp || inflammation?.has_inflammation ? (
         <div className="metric-row">
-          <span><Microscope size={16} />Diện tích vùng nghi tổn thương</span>
-          <strong>{result.polyp.area_ratio ? `${Math.round(result.polyp.area_ratio * 1000) / 10}%` : "N/A"}</strong>
+          <span><Microscope size={16} />{result.polyp.has_polyp ? "Diện tích vùng nghi tổn thương" : "Diện tích vùng viêm tham khảo"}</span>
+          <strong>{areaRatio ? `${Math.round(areaRatio * 1000) / 10}%` : "N/A"}</strong>
         </div>
       ) : null}
 
@@ -210,34 +218,33 @@ function ImageEvidencePanel({ result, previewUrl }: { result: PredictionResult; 
             <figcaption>Ảnh gốc</figcaption>
           </figure>
         ) : null}
-        {result.polyp.overlay_base64 ? (
+        {overlaySrc ? (
           <figure className="diagnostic-figure segmentation-figure">
-            <img src={result.polyp.overlay_base64} alt="Vùng khoanh tổn thương" />
-            <figcaption>Vùng khoanh</figcaption>
+            <img src={overlaySrc} alt={result.polyp.has_polyp ? "Vùng khoanh tổn thương" : "Vùng khoanh viêm tham khảo"} />
+            <figcaption>{result.polyp.has_polyp ? "Vùng khoanh" : "Vùng viêm tham khảo"}</figcaption>
           </figure>
         ) : null}
-        {result.polyp.mask_base64 ? (
+        {maskSrc ? (
           <figure className="diagnostic-figure segmentation-figure">
-            <img src={result.polyp.mask_base64} alt="Mask phân đoạn" />
-            <figcaption>Mask</figcaption>
+            <img src={maskSrc} alt={result.polyp.has_polyp ? "Mask phân đoạn" : "Mask viêm tham khảo"} />
+            <figcaption>{result.polyp.has_polyp ? "Mask" : "Mask viêm"}</figcaption>
           </figure>
         ) : null}
       </div>
 
-      {result.polyp.has_polyp && !hasSegmentation ? (
+      {result.polyp.has_polyp && !hasPolypSegmentation ? (
         <div className="quiet-note warning-note">
           <CircleAlert size={16} />Ảnh xếp nhóm polyp nhưng chưa có mask/ vùng khoanh. Thử ảnh rõ hơn.
         </div>
       ) : null}
-      {!result.polyp.has_polyp ? (
+      {!result.polyp.has_polyp && !inflammation?.has_inflammation ? (
         <div className="quiet-note">
-          <CircleAlert size={16} />Kết quả không thuộc nhóm polyp nên không tạo vùng phân đoạn.
+          <CircleAlert size={16} />Kết quả không thuộc nhóm polyp hoặc viêm nên không tạo vùng khoanh.
         </div>
       ) : null}
     </div>
   );
 }
-
 function ClinicalList({ title, items }: { title: string; items: string[] }) {
   return (
     <div className="clinical-list">

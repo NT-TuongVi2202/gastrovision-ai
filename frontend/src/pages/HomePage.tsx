@@ -176,6 +176,10 @@ export function HomePage() {
 
   function handleSaveRecord() {
     if (!currentHistoryItem) return;
+    if (!isDoctorReviewComplete(doctorReview) || doctorReview.decision !== "edit") {
+      setError("Bác sĩ cần chỉnh sửa, nhập đủ chẩn đoán cuối cùng và khuyến nghị điều trị trước khi lưu/xuất PDF.");
+      return;
+    }
     const updated: AnalysisHistoryItem = {
       ...currentHistoryItem,
       patient,
@@ -187,6 +191,7 @@ export function HomePage() {
     setCurrentHistoryItem(updated);
     setHistoryItems(updateAnalysisHistoryItem(updated));
     setSaveMessage("Đã lưu hồ sơ khám. Báo cáo PDF sẽ dùng kết luận mới nhất.");
+    setError(null);
   }
 
   function handleReset() {
@@ -379,6 +384,7 @@ function AnalysisWorkspace({
           onChange={onDoctorReviewChange}
           onSave={onSaveRecord}
           saveMessage={saveMessage}
+          hasUnsavedChanges={hasSavedDoctorReviewChanged(currentHistoryItem, doctorReview)}
           canSave={Boolean(currentHistoryItem)}
           onDownloadReport={isReportReady(currentHistoryItem) ? () => downloadReport(currentHistoryItem) : undefined}
           onOpenReport={isReportReady(currentHistoryItem) ? () => openReportPdf(currentHistoryItem) : undefined}
@@ -474,7 +480,7 @@ function PatientForm({ patient, onChange }: { patient: PatientInfo; onChange: (p
    Step 4: Doctor review panel
    ========================================================================= */
 
-function DoctorReviewPanel({ review, result, patient, onChange, onSave, saveMessage, canSave, onDownloadReport, onOpenReport, previewUrl }: { review: DoctorReview; result: PredictionResult; patient: PatientInfo; onChange: (review: DoctorReview) => void; onSave: () => void; saveMessage: string | null; canSave: boolean; onDownloadReport?: () => void | Promise<void>; onOpenReport?: () => void | Promise<void>; previewUrl?: string | null; }) {
+function DoctorReviewPanel({ review, result, patient, onChange, onSave, saveMessage, hasUnsavedChanges, canSave, onDownloadReport, onOpenReport, previewUrl }: { review: DoctorReview; result: PredictionResult; patient: PatientInfo; onChange: (review: DoctorReview) => void; onSave: () => void; saveMessage: string | null; hasUnsavedChanges: boolean; canSave: boolean; onDownloadReport?: () => void | Promise<void>; onOpenReport?: () => void | Promise<void>; previewUrl?: string | null; }) {
   const findings = review.endoscopy_findings || emptyEndoscopyFindings;
   const [bbox, setBbox] = useState<BoundingBox | null>(null);
 
@@ -495,7 +501,7 @@ function DoctorReviewPanel({ review, result, patient, onChange, onSave, saveMess
   const decisionPillClass = `decision-pill ${review.decision}`;
   const reviewComplete = isDoctorReviewComplete(review);
   // Bác sĩ chỉ xuất PDF khi: đã chỉnh sửa (decision === "edit") + đã lưu + đủ nội dung.
-  const canExportPdf = reviewComplete && review.decision === "edit" && Boolean(saveMessage) && Boolean(onDownloadReport) && Boolean(onOpenReport);
+  const canExportPdf = reviewComplete && review.decision === "edit" && Boolean(saveMessage) && !hasUnsavedChanges && Boolean(onDownloadReport) && Boolean(onOpenReport);
 
   return (
     <section className="panel review-panel">
@@ -633,11 +639,19 @@ function DoctorReviewPanel({ review, result, patient, onChange, onSave, saveMess
       {saveMessage ? <div className="success-box" style={{ background: "var(--success-soft)", color: "var(--success)", padding: "12px 16px", borderRadius: "var(--r-md)", fontSize: 13 }}>{saveMessage}</div> : null}
 
       {/* Xuất PDF: chỉ hiện sau khi lưu + đã chỉnh sửa */}
-      <div className="pdf-actions">
+      <div className={`pdf-actions ${canExportPdf ? "is-ready" : "is-locked"}`}>
         <div className="pdf-actions-label">
-          {canExportPdf
-            ? "Báo cáo PDF sẵn sàng — dùng nội dung kết luận cuối cùng bạn đã lưu."
-            : "Báo cáo PDF sẽ mở sau khi bạn chỉnh sửa kết quả hệ thống và lưu hồ sơ."}
+          <span className="pdf-actions-icon">{canExportPdf ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}</span>
+          <div>
+            <strong>{canExportPdf ? "Báo cáo PDF đã sẵn sàng" : "Báo cáo PDF đang khóa"}</strong>
+            <span>
+              {canExportPdf
+                ? "Dùng nội dung kết luận cuối cùng bác sĩ đã lưu."
+                : hasUnsavedChanges
+                  ? "Nội dung vừa sửa chưa được lưu. Lưu hồ sơ trước khi xem hoặc tải báo cáo."
+                  : "Chỉnh sửa kết quả hệ thống và lưu hồ sơ để mở xem hoặc tải báo cáo."}
+            </span>
+          </div>
         </div>
         <div className="pdf-actions-buttons">
           <button className="btn btn-primary" disabled={!canExportPdf} onClick={onOpenReport} type="button">
@@ -928,6 +942,20 @@ function isReportReady(item: AnalysisHistoryItem | null | undefined): item is An
   return Boolean(item?.doctor_review?.updated_at && isDoctorReviewComplete(item.doctor_review));
 }
 
+function hasSavedDoctorReviewChanged(item: AnalysisHistoryItem | null | undefined, review: DoctorReview) {
+  if (!item?.doctor_review?.updated_at) return false;
+  return serializeDoctorReview(item.doctor_review) !== serializeDoctorReview(review);
+}
+
+function serializeDoctorReview(review: DoctorReview) {
+  return JSON.stringify({
+    decision: review.decision,
+    final_diagnosis: review.final_diagnosis,
+    treatment_recommendation: review.treatment_recommendation,
+    note: review.note,
+    endoscopy_findings: review.endoscopy_findings || emptyEndoscopyFindings,
+  });
+}
 function isPatientComplete(patient: PatientInfo) {
   return Boolean(patient.full_name.trim() && patient.age.trim() && patient.gender.trim() && patient.symptoms.trim());
 }

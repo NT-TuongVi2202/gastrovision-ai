@@ -2333,3 +2333,273 @@ a:hover {
     flex-direction: row;
   }
 }
+
+/* =========================================================================
+   UI polish — compact clinical dashboard
+   ========================================================================= */
+
+body {
+  background:
+    linear-gradient(180deg, #f7fafb 0%, #eef4f5 46%, #f8fafb 100%);
+}
+
+.app-shell {
+  background: transparent;
+}
+
+.sidebar {
+  background: #0b1b24;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 10px 0 32px rgba(12, 31, 42, 0.08);
+}
+
+.sidebar-brand-mark {
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.sidebar-nav-item {
+  border-radius: 8px;
+}
+
+.sidebar-nav-item.is-active {
+  background: rgba(15, 138, 131, 0.24);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.workspace {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding-top: 28px;
+  gap: var(--s-6);
+}
+
+.page-header {
+  align-items: center;
+  padding-bottom: var(--s-5);
+  border-bottom: 1px solid var(--border);
+}
+
+.page-header-text {
+  max-width: 760px;
+}
+
+.page-header h1 {
+  font-size: clamp(24px, 2vw, 32px);
+}
+
+.workspace-grid {
+  grid-template-columns: minmax(320px, 0.95fr) minmax(340px, 1.05fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+.panel,
+.history-section,
+.action-bar {
+  border-radius: 8px;
+  border-color: #dce7eb;
+  box-shadow: 0 10px 28px rgba(15, 35, 44, 0.06);
+}
+
+.panel {
+  padding: 22px;
+}
+
+.panel-header {
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-header.compact {
+  margin-bottom: 0;
+}
+
+.panel-header h2 {
+  letter-spacing: 0;
+}
+
+.form-grid {
+  gap: var(--s-3) var(--s-4);
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+  border-radius: 8px;
+  background: #fbfdfe;
+}
+
+.form-field textarea {
+  min-height: 82px;
+}
+
+.review-panel .form-field textarea {
+  min-height: 74px;
+}
+
+.dropzone {
+  border-radius: 8px;
+  min-height: 190px;
+  justify-content: center;
+}
+
+.preview-frame {
+  border-radius: 8px;
+  min-height: 260px;
+  background: #081820;
+}
+
+.empty-preview {
+  min-height: 260px;
+}
+
+.result-section,
+.segment-metrics-panel,
+.structured-report fieldset,
+.decision-support-card,
+.history-item {
+  border-radius: 8px;
+}
+
+.review-actions {
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.action-bar {
+  position: sticky;
+  bottom: 14px;
+  z-index: 20;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.action-bar-buttons,
+.pdf-actions-buttons,
+.review-actions {
+  align-items: center;
+}
+
+.btn {
+  border-radius: 8px;
+  min-height: 38px;
+}
+
+.pdf-actions {
+  align-items: center;
+  padding: var(--s-4) var(--s-5);
+  border-radius: 8px;
+  border-style: solid;
+  background: #f8fbfc;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+}
+
+.pdf-actions.is-ready {
+  background: linear-gradient(180deg, #eefaf5 0%, #f8fffb 100%);
+  border-color: rgba(31, 122, 77, 0.28);
+}
+
+.pdf-actions.is-locked {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border-color: var(--border);
+}
+
+.pdf-actions-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: min(100%, 320px);
+}
+
+.pdf-actions-label > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pdf-actions-label strong {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.pdf-actions-label span:not(.pdf-actions-icon) {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.pdf-actions-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.pdf-actions.is-ready .pdf-actions-icon {
+  color: var(--success);
+  background: var(--success-soft);
+  border-color: rgba(31, 122, 77, 0.18);
+}
+
+.pdf-actions-buttons .btn {
+  min-width: 118px;
+}
+
+.success-box {
+  border: 1px solid rgba(31, 122, 77, 0.18);
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --content-max: 1320px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+  .action-bar {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    border-right: 0;
+    box-shadow: none;
+  }
+  .sidebar-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .workspace {
+    padding-top: var(--s-5);
+  }
+  .page-header {
+    align-items: flex-start;
+  }
+  .panel {
+    padding: var(--s-4);
+  }
+  .action-bar-buttons,
+  .review-actions,
+  .pdf-actions-buttons {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .action-bar-buttons .btn,
+  .review-actions .btn,
+  .pdf-actions-buttons .btn {
+    flex: 1 1 160px;
+  }
+}

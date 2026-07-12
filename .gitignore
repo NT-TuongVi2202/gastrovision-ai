@@ -35,3 +35,11 @@ frontend/node_modules/
 .DS_Store
 *.pkl
 bao_cao_images/
+
+# PDF extraction scratch files (local only, not part of submission)
+.codex_extract_pdf.py
+.codex_extract_pdf_fast.py
+pdf_text_extract.txt
+
+# Run-time logs (kept locally for debugging, not part of source)
+*.log

@@ -139,6 +139,11 @@ def is_polyp_label(label: str | None) -> bool:
     return bool(label and "polyp" in label.lower())
 
 
+def is_inflammation_label(label: str | None) -> bool:
+    key = normalize_label_key(label)
+    return any(term in key for term in ("esophagitis", "erythema", "inflammation", "ulcer", "mucosal"))
+
+
 def normalize_label_key(label: str | None) -> str:
     return (label or "").strip().lower().replace("_", " ")
 
@@ -264,11 +269,20 @@ class GastroVisionInference:
         predicted_score = scores[predicted_label]
         result_label = None if is_low_confidence else predicted_label
         polyp_score = float(scores.get("polyps", 0.0))
+        inflammation_score = float(scores.get("esophagitis", 0.0))
         subgroup_polyp_score = max(
             (
                 float(item.get("score", 0.0))
                 for item in classification["subgroup_scores"]
                 if is_polyp_label(item.get("label")) or item.get("group") == "polyps"
+            ),
+            default=0.0,
+        )
+        subgroup_inflammation_score = max(
+            (
+                float(item.get("score", 0.0))
+                for item in classification["subgroup_scores"]
+                if is_inflammation_label(item.get("label")) or item.get("group") == "esophagitis"
             ),
             default=0.0,
         )
@@ -287,9 +301,26 @@ class GastroVisionInference:
             "overlay_base64": None,
             "area_ratio": None,
         }
+        should_highlight_inflammation = bool(
+            (
+                result_label == "esophagitis"
+                or (predicted_label == "esophagitis" and inflammation_score >= 0.35)
+                or subgroup_inflammation_score >= 0.30
+            )
+            and polyp_score < 0.45
+        )
+        inflammation = {
+            "has_inflammation": should_highlight_inflammation,
+            "mask_base64": None,
+            "overlay_base64": None,
+            "area_ratio": None,
+            "method": None,
+        }
 
         if should_segment_polyp:
             polyp.update(self._segment_polyp(image))
+        if inflammation["has_inflammation"]:
+            inflammation.update(self._highlight_inflammation(image))
 
         return {
             "label": result_label,
@@ -304,6 +335,7 @@ class GastroVisionInference:
                 "subgroup_scores": classification["subgroup_scores"],
             },
             "polyp": polyp,
+            "inflammation": inflammation,
             "clinical_assessment": add_clinical_context_to_assessment(
                 self._clinical_assessment(result_label, is_low_confidence, predicted_score, polyp),
                 clinical_context,
@@ -355,6 +387,46 @@ class GastroVisionInference:
             "mask_base64": encode_png(mask_image.convert("RGB")),
             "overlay_base64": encode_png(overlay),
             "area_ratio": area_ratio,
+        }
+
+    def _highlight_inflammation(self, image: Image.Image) -> dict[str, Any]:
+        original = image.convert("RGB")
+        original_size = original.size
+        work = original.resize((352, 352))
+        arr = np.asarray(work).astype(np.float32)
+        red = arr[..., 0]
+        green = arr[..., 1]
+        blue = arr[..., 2]
+        brightness = arr.mean(axis=2)
+        redness = red - 0.62 * green - 0.38 * blue
+        saturation = arr.max(axis=2) - arr.min(axis=2)
+        tissue_mask = (brightness > 35) & (brightness < 238) & (saturation > 18)
+        candidate_values = redness[tissue_mask]
+        if candidate_values.size:
+            threshold = max(18.0, float(np.percentile(candidate_values, 78)))
+        else:
+            threshold = 28.0
+        mask = (redness >= threshold) & tissue_mask & (red > green * 1.06) & (red > blue * 1.08)
+        if mask.mean() < 0.006 and candidate_values.size:
+            threshold = max(12.0, float(np.percentile(candidate_values, 68)))
+            mask = (redness >= threshold) & tissue_mask & (red > green * 1.03) & (red > blue * 1.04)
+
+        binary_mask = mask.astype(np.uint8) * 255
+        mask_image = Image.fromarray(binary_mask, mode="L").resize(original_size)
+        area_ratio = float(np.asarray(mask_image).mean() / 255.0)
+
+        overlay = original.copy().convert("RGBA")
+        amber_layer = Image.new("RGBA", original_size, (245, 120, 35, 0))
+        alpha = Image.fromarray((np.asarray(mask_image) > 0).astype(np.uint8) * 105, mode="L")
+        amber_layer.putalpha(alpha)
+        overlay = Image.alpha_composite(overlay, amber_layer).convert("RGB")
+
+        return {
+            "has_inflammation": True,
+            "mask_base64": encode_png(mask_image.convert("RGB")),
+            "overlay_base64": encode_png(overlay),
+            "area_ratio": area_ratio,
+            "method": "redness-heuristic",
         }
 
     @staticmethod

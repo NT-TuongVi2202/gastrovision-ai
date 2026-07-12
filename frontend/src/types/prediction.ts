@@ -36,6 +36,13 @@ export interface PredictionResult {
     overlay_base64: string | null;
     area_ratio: number | null;
   };
+  inflammation?: {
+    has_inflammation: boolean;
+    mask_base64: string | null;
+    overlay_base64: string | null;
+    area_ratio: number | null;
+    method: string | null;
+  };
   clinical_assessment?: ClinicalAssessment;
   disclaimer: string;
 }

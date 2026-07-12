@@ -1,7 +1,7 @@
 ﻿import type { PatientInfo } from "../types/history";
 import type { ClinicalAssessment, PredictionLabel, PredictionResponse, PredictionResult, ScoreMap } from "../types/prediction";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API !== "false";
 
 const labelDisplay: Record<PredictionLabel, string> = {
@@ -63,6 +63,17 @@ async function mockAnalyzeImage(file: File, previewUrl: string): Promise<Predict
     );
   }
 
+  if (result.label === "esophagitis") {
+    const assets = await createMockInflammationAssets(previewUrl);
+    result.inflammation = {
+      has_inflammation: true,
+      mask_base64: assets.mask,
+      overlay_base64: assets.overlay,
+      area_ratio: 0.12,
+      method: "mock-redness-heuristic",
+    };
+  }
+
   return {
     success: true,
     request_id: crypto.randomUUID(),
@@ -93,6 +104,13 @@ function buildResult(label: PredictionLabel, scores: ScoreMap): PredictionResult
       overlay_base64: null,
       area_ratio: null,
     },
+    inflammation: {
+      has_inflammation: label === "esophagitis",
+      mask_base64: null,
+      overlay_base64: null,
+      area_ratio: null,
+      method: null,
+    },
     clinical_assessment: buildClinicalAssessment(label, false, scores[label], null),
     disclaimer: "Kết quả chỉ hỗ trợ nghiên cứu, không thay thế chẩn đoán của bác sĩ.",
   };
@@ -115,6 +133,13 @@ function buildLowConfidenceResult(scores: ScoreMap): PredictionResult {
       overlay_base64: null,
       area_ratio: null,
     },
+    inflammation: {
+      has_inflammation: false,
+      mask_base64: null,
+      overlay_base64: null,
+      area_ratio: null,
+      method: null,
+    },
     clinical_assessment: buildClinicalAssessment(null, true, scores.esophagitis, null),
     disclaimer: "Kết quả chỉ hỗ trợ nghiên cứu, không thay thế chẩn đoán của bác sĩ.",
   };
@@ -122,6 +147,47 @@ function buildLowConfidenceResult(scores: ScoreMap): PredictionResult {
 
 function delay(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function createMockInflammationAssets(src: string): Promise<{ mask: string; overlay: string }> {
+  const image = await loadImage(src);
+  const width = 640;
+  const height = Math.max(360, Math.round((image.height / image.width) * width));
+
+  const maskCanvas = document.createElement("canvas");
+  maskCanvas.width = width;
+  maskCanvas.height = height;
+  const maskCtx = maskCanvas.getContext("2d");
+  if (!maskCtx) throw new Error("Không thể tạo mask viêm mô phỏng.");
+
+  maskCtx.fillStyle = "#000";
+  maskCtx.fillRect(0, 0, width, height);
+  maskCtx.fillStyle = "#fff";
+  maskCtx.beginPath();
+  maskCtx.ellipse(width * 0.48, height * 0.42, width * 0.2, height * 0.15, 0.25, 0, Math.PI * 2);
+  maskCtx.ellipse(width * 0.62, height * 0.56, width * 0.16, height * 0.11, -0.4, 0, Math.PI * 2);
+  maskCtx.fill();
+
+  const overlayCanvas = document.createElement("canvas");
+  overlayCanvas.width = width;
+  overlayCanvas.height = height;
+  const overlayCtx = overlayCanvas.getContext("2d");
+  if (!overlayCtx) throw new Error("Không thể tạo overlay viêm mô phỏng.");
+
+  overlayCtx.drawImage(image, 0, 0, width, height);
+  overlayCtx.fillStyle = "rgba(245, 120, 35, 0.38)";
+  overlayCtx.beginPath();
+  overlayCtx.ellipse(width * 0.48, height * 0.42, width * 0.2, height * 0.15, 0.25, 0, Math.PI * 2);
+  overlayCtx.ellipse(width * 0.62, height * 0.56, width * 0.16, height * 0.11, -0.4, 0, Math.PI * 2);
+  overlayCtx.fill();
+  overlayCtx.strokeStyle = "#f97316";
+  overlayCtx.lineWidth = 4;
+  overlayCtx.stroke();
+
+  return {
+    mask: maskCanvas.toDataURL("image/png"),
+    overlay: overlayCanvas.toDataURL("image/png"),
+  };
 }
 
 async function createMockPolypAssets(src: string): Promise<{ mask: string; overlay: string }> {

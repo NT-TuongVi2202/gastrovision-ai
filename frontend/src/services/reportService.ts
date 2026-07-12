@@ -14,6 +14,7 @@ const COLOR_TEXT_MUTED: [number, number, number] = [100, 116, 139];
 const COLOR_TEXT_LABEL: [number, number, number] = [80, 100, 110];
 const COLOR_ACCENT: [number, number, number] = [190, 38, 38]; // đỏ cho tiêu đề lớn
 const COLOR_WHITE: [number, number, number] = [255, 255, 255];
+const EMPTY_TEXT = "Không có";
 
 let regularFontBase64: string | null = null;
 let boldFontBase64: string | null = null;
@@ -44,394 +45,324 @@ export async function buildReportPdf(item: AnalysisHistoryItem) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   await registerVietnameseFont(doc);
 
-  const margin = 14;
+  const margin = 12;
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const contentWidth = pageWidth - margin * 2;
+  const footerReserve = 12;
+  const maxPages = 2;
   let y = margin;
-
-  const pageTracker = { current: 1 };
-
-  const ensureSpace = (height: number) => {
-    if (y + height <= pageHeight - margin - 8) return; // chừa footer 8mm
-    doc.addPage();
-    pageTracker.current += 1;
-    y = margin;
-    drawPageFooter(doc, pageWidth, pageHeight, margin, pageTracker.current);
-  };
-
-  const drawPageFooter = (target: jsPDF, w: number, h: number, m: number, pageNum: number) => {
-    target.setDrawColor(...COLOR_BORDER_SOFT);
-    target.line(m, h - 9, w - m, h - 9);
-    target.setFont(PDF_FONT_NAME, "normal");
-    target.setFontSize(8);
-    target.setTextColor(...COLOR_TEXT_MUTED);
-    target.text("GastroVision AI • Hồ sơ nội soi dạ dày", m, h - 5);
-    target.text(`Trang ${pageNum}`, w - m, h - 5, { align: "right" });
-  };
-
-  const setFont = (bold = false, size = 10, color: [number, number, number] = COLOR_TEXT) => {
-    doc.setFont(PDF_FONT_NAME, bold ? "bold" : "normal");
-    doc.setFontSize(size);
-    doc.setTextColor(...color);
-  };
-
-  const addText = (
-    text: string,
-    options: { size?: number; bold?: boolean; color?: [number, number, number]; gap?: number; align?: "left" | "center" | "right" } = {},
-  ) => {
-    const size = options.size || 10;
-    const gap = options.gap ?? 5;
-    setFont(options.bold || false, size, options.color || COLOR_TEXT);
-    const lines = doc.splitTextToSize(text, contentWidth);
-    const lineHeight = size * 0.55;
-    ensureSpace(lines.length * lineHeight + gap);
-    const x = options.align === "center" ? pageWidth / 2 : options.align === "right" ? pageWidth - margin : margin;
-    doc.text(lines, x, y, { align: options.align || "left" });
-    y += lines.length * lineHeight + gap;
-  };
-
-  const addSectionTitle = (title: string, subtitle?: string) => {
-    ensureSpace(16);
-    y += 4;
-    // dải màu teal nhạt phía trái
-    doc.setFillColor(...COLOR_PRIMARY);
-    doc.rect(margin, y - 4.5, 1.6, 6, "F");
-    setFont(true, 12.5, COLOR_PRIMARY);
-    doc.text(title.toUpperCase(), margin + 5, y);
-    if (subtitle) {
-      setFont(false, 8.5, COLOR_TEXT_MUTED);
-      doc.text(subtitle, pageWidth - margin, y, { align: "right" });
-    }
-    y += 3;
-    doc.setDrawColor(...COLOR_BORDER);
-    doc.setLineWidth(0.2);
-    doc.line(margin, y, pageWidth - margin, y);
-    y += 7;
-  };
-
-  const drawCard = (x: number, top: number, w: number, h: number, fill: [number, number, number] = COLOR_BG_SOFT, border: [number, number, number] = COLOR_BORDER_SOFT) => {
-    doc.setFillColor(...fill);
-    doc.setDrawColor(...border);
-    doc.setLineWidth(0.2);
-    doc.roundedRect(x, top, w, h, 1.6, 1.6, "FD");
-  };
-
-  const drawRecordHeader = () => {
-    // Banner trên cùng
-    doc.setFillColor(...COLOR_PRIMARY);
-    doc.rect(0, 0, pageWidth, 30, "F");
-    // Dải nhấn nhỏ dưới banner
-    doc.setFillColor(...COLOR_PRIMARY_LIGHT);
-    doc.rect(0, 30, pageWidth, 1.4, "F");
-
-    // Logo placeholder: hình tròn + chữ GV
-    const logoCx = margin + 8;
-    const logoCy = 15;
-    doc.setFillColor(...COLOR_WHITE);
-    doc.circle(logoCx, logoCy, 7, "F");
-    doc.setFont(PDF_FONT_NAME, "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(...COLOR_PRIMARY);
-    doc.text("GV", logoCx, logoCy + 1.2, { align: "center" });
-
-    // Tiêu đề bệnh viện
-    doc.setFont(PDF_FONT_NAME, "bold");
-    doc.setFontSize(13);
-    doc.setTextColor(...COLOR_WHITE);
-    doc.text("HỒ SƠ NỘI SOI DẠ DÀY", logoCx + 11, 12);
-    doc.setFont(PDF_FONT_NAME, "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(220, 240, 238);
-    doc.text("GastroVision AI - Hỗ trợ chẩn đoán hình ảnh nội soi", logoCx + 11, 17.5);
-
-    // Cột phải: mã hồ sơ + ngày
-    const rightX = pageWidth - margin;
-    doc.setFont(PDF_FONT_NAME, "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(200, 230, 226);
-    doc.text("MÃ HỒ SƠ", rightX, 9, { align: "right" });
-    doc.setFont(PDF_FONT_NAME, "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...COLOR_WHITE);
-    doc.text(buildShortRecordCode(item), rightX, 14, { align: "right" });
-    doc.setFont(PDF_FONT_NAME, "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(200, 230, 226);
-    doc.text(`Ngày khám: ${formatDateTime(item.created_at)}`, rightX, 19, { align: "right" });
-    doc.text(`In lúc: ${formatDateTime(new Date().toISOString())}`, rightX, 23, { align: "right" });
-
-    y = 38;
-  };
+  let currentPage = 1;
+  let wasClipped = false;
 
   const patient = item.patient;
   const review = item.doctor_review;
   const findings = review?.endoscopy_findings;
   const prediction = item.result;
   const confidencePercent = Math.round(prediction.confidence.predicted_score * 100);
+  const diagnosis = prediction.label_display || prediction.label || "Chưa xác định";
 
-  drawRecordHeader();
+  const setFont = (bold = false, size = 9, color: [number, number, number] = COLOR_TEXT) => {
+    doc.setFont(PDF_FONT_NAME, bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+  };
 
-  // === Tiêu đề lớn + tagline ===
-  addText("KẾT QUẢ NỘI SOI DẠ DÀY", { size: 17, bold: true, color: COLOR_ACCENT, align: "center", gap: 6 });
-  addText("Phiếu tổng hợp kết quả phân tích ảnh nội soi và nhận định của bác sĩ", {
-    size: 9.5,
-    color: COLOR_TEXT_MUTED,
-    align: "center",
-    gap: 8,
-  });
+  const ensureSpace = (height: number) => {
+    if (y + height <= pageHeight - footerReserve) return true;
+    if (currentPage >= maxPages) {
+      wasClipped = true;
+      return false;
+    }
+    doc.addPage();
+    currentPage += 1;
+    y = margin + 2;
+    return true;
+  };
 
-  // === Section 1: Thông tin hành chính (dạng card) ===
-  addSectionTitle("Thông tin hành chính và lâm sàng", "Bệnh nhân");
+  const clipped = (value: string | undefined | null, max = 190) => {
+    const text = cleanReportText(value?.trim() || EMPTY_TEXT);
+    if (text.length <= max) return text;
+    wasClipped = true;
+    return text.slice(0, max - 1).trim() + "…";
+  };
 
-  const cardGap = 4;
-  const cardCount = 4;
-  const cardW = (contentWidth - cardGap * (cardCount - 1)) / cardCount;
-  const cardH = 22;
+  const lineText = (text: string, x: number, top: number, width: number, options: { size?: number; bold?: boolean; color?: [number, number, number]; maxLines?: number } = {}) => {
+    const size = options.size || 8.5;
+    const lineHeight = size * 0.52;
+    setFont(options.bold || false, size, options.color || COLOR_TEXT);
+    let lines = doc.splitTextToSize(text, width);
+    if (options.maxLines && lines.length > options.maxLines) {
+      wasClipped = true;
+      lines = lines.slice(0, options.maxLines);
+      lines[lines.length - 1] = String(lines[lines.length - 1]).replace(/…?$/, "") + "…";
+    }
+    doc.text(lines, x, top);
+    return lines.length * lineHeight;
+  };
 
-  const ageGender = `${patient?.age || "—"}/${patient?.gender || "—"}`;
-  drawInfoCard(margin, y, cardW, cardH, "HỌ TÊN", patient?.full_name?.trim() || "Chưa nhập", true);
-  drawInfoCard(margin + (cardW + cardGap), y, cardW, cardH, "TUỔI / GIỚI", ageGender);
-  drawInfoCard(margin + (cardW + cardGap) * 2, y, cardW, cardH, "MÃ HỒ SƠ", buildShortRecordCode(item));
-  drawInfoCard(margin + (cardW + cardGap) * 3, y, cardW, cardH, "CHẨN ĐOÁN NHÓM", prediction.label_display || prediction.label || "—");
-  y += cardH + 8;
-
-  // Hàng lâm sàng dạng 2 cột (label - value)
-  const clinicalRows: Array<[string, string]> = [
-    ["Triệu chứng hiện tại", patient?.symptoms?.trim() || "Chưa nhập"],
-    ["Tiền sử/lần bệnh trước", patient?.previous_history?.trim() || "Chưa nhập"],
-    ["Xét nghiệm/kết quả dạ dày trước đó", patient?.previous_tests?.trim() || "Chưa nhập"],
-  ];
-  drawDefinitionList(clinicalRows);
-
-  // === Hình ảnh nội soi ===
-  await addEndoscopyImagesToPdf(doc, item, margin, contentWidth, pageHeight, () => y, (nextY) => {
-    y = nextY;
-  }, ensureSpace);
-
-  // === Mô tả nội soi (2 cột label - value, label có nền nhạt) ===
-  addSectionTitle("Mô tả nội soi theo vị trí giải phẫu", "Bác sĩ nhập");
-  const endoscopyRows: Array<[string, string]> = [
-    ["Thực quản", findings?.esophagus?.trim() || "Chưa nhập"],
-    ["Dạ dày (tổng quan)", findings?.stomach?.trim() || "Chưa nhập"],
-    ["Tâm vị / Phình vị", findings?.cardia_fundus?.trim() || "Chưa nhập"],
-    ["Thân vị", findings?.body?.trim() || "Chưa nhập"],
-    ["Hang vị", findings?.antrum?.trim() || "Chưa nhập"],
-    ["Môn vị", findings?.pylorus?.trim() || "Chưa nhập"],
-    ["Hành tá tràng", findings?.duodenal_bulb?.trim() || "Chưa nhập"],
-    ["Tá tràng", findings?.duodenum?.trim() || "Chưa nhập"],
-    ["Test HP", findings?.hp_test?.trim() || "Chưa nhập"],
-  ];
-  drawDefinitionList(endoscopyRows);
-
-  // === Thông số tham khảo AI ===
-  addSectionTitle("Thông số tham khảo từ ảnh nội soi", `Độ tin cậy ${confidencePercent}%`);
-  const signals = getClinicalSignals(prediction);
-  addText(buildImageFindingSummary(prediction), { gap: 6 });
-  addAiSignalTable([
-    ["Bình thường", "Tín hiệu niêm mạc/giải phẫu bình thường", prediction.confidence.scores.normal],
-    ["Viêm/bất thường niêm mạc", "Tín hiệu tổn thương hoặc bất thường niêm mạc", prediction.confidence.scores.esophagitis],
-    ["Polyp", "Tín hiệu nghi polyp", prediction.confidence.scores.polyps],
-  ]);
-  addText(
-    `Tổng hợp nhãn phụ: dụng cụ/can thiệp ${formatPercent(signals.toolScore)}, bình thường ${formatPercent(signals.normalScore)}, polyp ${formatPercent(signals.polypScore)}, bất thường niêm mạc không tính dụng cụ ${formatPercent(signals.mucosaAbnormalScore)}.`,
-    { gap: 6 },
-  );
-  if (prediction.confidence.subgroup_scores?.length) {
-    addText("Bảng dấu hiệu chuyên sâu tham khảo:", { bold: true, gap: 6 });
-    addSimpleTable(
-      ["Dấu hiệu", "Nhóm", "Tỷ lệ"],
-      prediction.confidence.subgroup_scores.slice(0, 8).map((sub) => [
-        sub.label_display || sub.label,
-        groupDisplayName(sub.group),
-        `${Math.round(sub.score * 100)}%`,
-      ]),
-    );
+  const section = (title: string, subtitle?: string) => {
+    if (!ensureSpace(10)) return false;
     y += 3;
-  }
-  if (prediction.polyp.area_ratio) {
-    addText(`Tỷ lệ vùng nghi ngờ trên ảnh: ${Math.round(prediction.polyp.area_ratio * 1000) / 10}%.`, { gap: 6 });
-  }
-  addText(
-    "Các thông số trên chỉ dùng để bác sĩ tham khảo khi đọc ảnh; kết luận chính thức thuộc về bác sĩ nội soi.",
-    { color: COLOR_TEXT_MUTED, gap: 10 },
-  );
-
-  // === Kết luận và khuyến nghị — khung nổi bật cuối ===
-  addSectionTitle("Kết luận và khuyến nghị", "Bắt buộc bác sĩ ký xác nhận");
-  drawConclusionBlock(findings?.conclusion?.trim() || review?.final_diagnosis?.trim() || "Chưa nhập");
-  addText("Khuyến nghị xử trí:", { bold: true, size: 10.5, color: COLOR_PRIMARY, gap: 5 });
-  addText(review?.treatment_recommendation?.trim() || "Chưa nhập", { gap: 8 });
-  if (review?.note?.trim()) {
-    addText("Ghi chú thêm:", { bold: true, size: 10.5, color: COLOR_PRIMARY, gap: 5 });
-    addText(review.note.trim(), { gap: 10 });
-  }
-
-  // === Chữ ký ===
-  drawSignatureBlock(pageWidth, margin);
-
-  // Footer trang đầu tiên
-  drawPageFooter(doc, pageWidth, pageHeight, margin, pageTracker.current);
-
-  return doc;
-
-  // ===== inner helpers =====
-  function drawInfoCard(x: number, top: number, w: number, h: number, label: string, value: string, valueBold = false) {
-    drawCard(x, top, w, h);
-    setFont(false, 7.5, COLOR_TEXT_LABEL);
-    doc.text(label, x + 3, top + 5.5);
-    setFont(valueBold, 10.5, COLOR_TEXT);
-    const lines = doc.splitTextToSize(value, w - 6);
-    const lineHeight = 10.5 * 0.55;
-    doc.text(lines, x + 3, top + 11);
-    if (label === "MÃ HỒ SƠ") {
-      setFont(false, 7.5, COLOR_TEXT_MUTED);
-      doc.text(formatDateTime(item.created_at), x + 3, top + 11 + lines.length * lineHeight + 1);
-    }
-  }
-
-  function drawDefinitionList(rows: Array<[string, string]>) {
-    const labelW = 52;
-    const valueW = contentWidth - labelW - 4;
-    for (const [label, value] of rows) {
-      const valueLines = doc.splitTextToSize(value, valueW);
-      const lineHeight = 9.5 * 0.55;
-      const rowH = Math.max(valueLines.length * lineHeight + 5, 9);
-      ensureSpace(rowH + 1.5);
-      // label nền nhạt
-      doc.setFillColor(...COLOR_BG_BAND);
-      doc.setDrawColor(...COLOR_BORDER_SOFT);
-      doc.roundedRect(margin, y, labelW, rowH, 1.2, 1.2, "FD");
-      setFont(true, 9, COLOR_PRIMARY);
-      doc.text(label, margin + 3, y + 5.5);
-      // value
-      setFont(false, 9.5, COLOR_TEXT);
-      doc.text(valueLines, margin + labelW + 4, y + 5.5);
-      y += rowH + 3;
-    }
-  }
-
-  function drawConclusionBlock(text: string) {
-    ensureSpace(35);
-    const lines = doc.splitTextToSize(text?.trim() || "Chưa nhập", contentWidth - 14);
-    const lineHeight = 11 * 0.55;
-    const boxH = Math.max(lines.length * lineHeight + 14, 22);
-    // Viền trái đậm teal
     doc.setFillColor(...COLOR_PRIMARY);
-    doc.rect(margin, y, 2, boxH, "F");
-    doc.setFillColor(...COLOR_BG_SOFT);
-    doc.setDrawColor(...COLOR_PRIMARY_LIGHT);
-    doc.setLineWidth(0.3);
-    doc.rect(margin + 2, y, contentWidth - 2, boxH, "FD");
-    setFont(true, 8.5, COLOR_PRIMARY);
-    doc.text("KẾT LUẬN NỘI SOI", margin + 6, y + 6);
-    setFont(true, 11, COLOR_TEXT);
-    doc.text(lines, margin + 6, y + 13);
-    y += boxH + 8;
-  }
-
-  function drawSignatureBlock(w: number, m: number) {
-    ensureSpace(40);
-    y += 4;
-    const signW = (contentWidth - 10) / 2;
-
-    // Cột trái: ngày xuất
-    setFont(false, 9, COLOR_TEXT_MUTED);
-    doc.text("Ngày xuất hồ sơ", m, y);
-    setFont(true, 9.5, COLOR_TEXT);
-    doc.text(formatDateTime(new Date().toISOString()), m, y + 5);
-
-    // Cột phải: bác sĩ nội soi
-    const rightX = w - m;
-    setFont(false, 9, COLOR_TEXT_MUTED);
-    doc.text("Bác sĩ nội soi", rightX, y, { align: "right" });
-    // Đường kẻ chữ ký
-    doc.setDrawColor(...COLOR_TEXT);
-    doc.setLineWidth(0.4);
-    doc.line(rightX - signW, y + 16, rightX, y + 16);
-    setFont(false, 8, COLOR_TEXT_MUTED);
-    doc.text("(Ký và ghi rõ họ tên)", rightX, y + 20, { align: "right" });
-    y += 26;
-  }
-
-  function addSimpleTable(headers: string[], rows: string[][]) {
-    const colWidths = [contentWidth * 0.55, contentWidth * 0.28, contentWidth * 0.17];
-    const rowHeight = 9;
-    ensureSpace(rowHeight * (rows.length + 1) + 6);
-    let x = margin;
-    doc.setFillColor(...COLOR_BG_BAND);
+    doc.roundedRect(margin, y - 4, 2, 6, 0.8, 0.8, "F");
+    setFont(true, 10.5, COLOR_PRIMARY);
+    doc.text(title.toUpperCase(), margin + 5, y);
+    if (subtitle) {
+      setFont(false, 7.5, COLOR_TEXT_MUTED);
+      doc.text(subtitle, pageWidth - margin, y, { align: "right" });
+    }
     doc.setDrawColor(...COLOR_BORDER);
-    doc.rect(margin, y, contentWidth, rowHeight, "FD");
-    setFont(true, 9, COLOR_PRIMARY);
-    headers.forEach((header, index) => {
-      doc.text(header, x + 3, y + 6.2);
-      x += colWidths[index];
-    });
-    y += rowHeight;
+    doc.setLineWidth(0.2);
+    doc.line(margin, y + 3, pageWidth - margin, y + 3);
+    y += 9;
+    return true;
+  };
 
-    rows.forEach((row) => {
-      ensureSpace(rowHeight + 2);
-      x = margin;
+  const drawHeader = () => {
+    doc.setFillColor(...COLOR_PRIMARY);
+    doc.rect(0, 0, pageWidth, 25, "F");
+    doc.setFillColor(...COLOR_PRIMARY_LIGHT);
+    doc.rect(0, 25, pageWidth, 1.2, "F");
+
+    doc.setFillColor(...COLOR_WHITE);
+    doc.circle(margin + 7, 12.5, 6.2, "F");
+    setFont(true, 10, COLOR_PRIMARY);
+    doc.text("GV", margin + 7, 14, { align: "center" });
+
+    setFont(true, 13, COLOR_WHITE);
+    doc.text("PHIẾU KẾT QUẢ NỘI SOI DẠ DÀY", margin + 17, 10.5);
+    setFont(false, 8.2, [220, 240, 238]);
+
+    const rightX = pageWidth - margin;
+    setFont(false, 7.5, [210, 235, 232]);
+    doc.text("Mã hồ sơ", rightX, 8, { align: "right" });
+    setFont(true, 10, COLOR_WHITE);
+    doc.text(buildShortRecordCode(item), rightX, 13, { align: "right" });
+    setFont(false, 7.5, [210, 235, 232]);
+    doc.text(formatDateTime(item.created_at), rightX, 18, { align: "right" });
+    y = 33;
+  };
+
+  const drawInfoCard = (x: number, top: number, w: number, h: number, label: string, value: string) => {
+    doc.setFillColor(...COLOR_BG_SOFT);
+    doc.setDrawColor(...COLOR_BORDER_SOFT);
+    doc.roundedRect(x, top, w, h, 1.5, 1.5, "FD");
+    setFont(true, 7.2, COLOR_TEXT_LABEL);
+    doc.text(label, x + 3, top + 5);
+    lineText(value, x + 3, top + 10.5, w - 6, { size: 8.8, bold: true, maxLines: 2 });
+  };
+
+  const drawPatientSummary = () => {
+    if (!ensureSpace(29)) return;
+    const gap = 3;
+    const cardW = (contentWidth - gap * 3) / 4;
+    const cardH = 18;
+    drawInfoCard(margin, y, cardW, cardH, "HỌ TÊN", clipped(patient?.full_name, 48));
+    drawInfoCard(margin + (cardW + gap), y, cardW, cardH, "TUỔI", clipped(patient?.age, 16));
+    drawInfoCard(margin + (cardW + gap) * 2, y, cardW, cardH, "GIỚI TÍNH", clipped(patient?.gender, 24));
+    drawInfoCard(margin + (cardW + gap) * 3, y, cardW, cardH, "TRIỆU CHỨNG", clipped(patient?.symptoms, 70));
+    y += cardH + 7;
+  };
+
+  const drawTwoColumnSummary = () => {
+    if (!ensureSpace(46)) return;
+    const gap = 5;
+    const colW = (contentWidth - gap) / 2;
+    const top = y;
+    const boxH = 42;
+    const drawBox = (x: number, title: string, body: string, accent: [number, number, number]) => {
       doc.setFillColor(...COLOR_WHITE);
       doc.setDrawColor(...COLOR_BORDER);
-      doc.rect(margin, y, contentWidth, rowHeight, "S");
-      setFont(false, 9, COLOR_TEXT);
-      row.forEach((value, index) => {
-        const clipped = doc.splitTextToSize(cleanReportText(value), colWidths[index] - 6)[0] || "";
-        doc.text(clipped, x + 3, y + 6.2);
-        x += colWidths[index];
-      });
-      y += rowHeight;
-    });
-    y += 5;
-  }
+      doc.roundedRect(x, top, colW, boxH, 1.8, 1.8, "S");
+      doc.setFillColor(...accent);
+      doc.roundedRect(x, top, colW, 8, 1.8, 1.8, "F");
+      setFont(true, 8.4, COLOR_WHITE);
+      doc.text(title, x + 3, top + 5.6);
+      lineText(body, x + 3, top + 14, colW - 6, { size: 8.2, maxLines: 5 });
+    };
+    drawBox(
+      margin,
+      "Tóm tắt kết quả",
+      diagnosis + ". " + clipped(prediction.message || buildImageFindingSummary(prediction), 260),
+      COLOR_PRIMARY,
+    );
+    drawBox(
+      margin + colW + gap,
+      "Bối cảnh lâm sàng",
+      "Triệu chứng: " + clipped(patient?.symptoms, 110) + "\nTiền sử: " + clipped(patient?.previous_history, 95) + "\nXét nghiệm trước: " + clipped(patient?.previous_tests, 75),
+      [63, 81, 181],
+    );
+    y += boxH + 8;
+  };
 
-  function addAiSignalTable(rows: Array<[string, string, number]>) {
-    const labelW = contentWidth * 0.36;
-    const descW = contentWidth * 0.44;
-    const pctW = contentWidth * 0.20;
-    const colWidths = [labelW, descW, pctW];
-    const rowHeight = 10;
-    ensureSpace(rowHeight * (rows.length + 1) + 6);
+  const drawMetricBar = (label: string, value: number, top: number) => {
+    const pct = Math.round(value * 100);
+    const labelW = 42;
+    const barW = contentWidth - labelW - 16;
+    setFont(true, 8.2, COLOR_TEXT);
+    doc.text(label, margin, top + 4.2);
+    doc.setFillColor(232, 238, 244);
+    doc.roundedRect(margin + labelW, top, barW, 5, 1.4, 1.4, "F");
+    const fillW = Math.max(3, (barW * pct) / 100);
+    const badgeColor: [number, number, number] = pct >= 60 ? COLOR_PRIMARY : pct >= 30 ? [190, 132, 30] : COLOR_TEXT_MUTED;
+    doc.setFillColor(...badgeColor);
+    doc.roundedRect(margin + labelW, top, fillW, 5, 1.4, 1.4, "F");
+    setFont(true, 8, COLOR_TEXT_MUTED);
+    doc.text(pct + "%", margin + labelW + barW + 4, top + 4.2);
+  };
 
-    // header
-    doc.setFillColor(...COLOR_PRIMARY);
-    doc.rect(margin, y, contentWidth, rowHeight, "F");
-    setFont(true, 9.5, COLOR_WHITE);
-    let x = margin;
-    ["Nhóm đánh giá", "Ý nghĩa lâm sàng", "Tỷ lệ"].forEach((header, i) => {
-      doc.text(header, x + 3, y + 6.8);
-      x += colWidths[i];
-    });
-    y += rowHeight;
+  const drawAiSnapshot = () => {
+    if (!section("Thông số AI tham khảo", "Rút gọn")) return;
+    const rows: Array<[string, number]> = [
+      ["Bình thường", prediction.confidence.scores.normal],
+      ["Viêm/bất thường", prediction.confidence.scores.esophagitis],
+      ["Polyp", prediction.confidence.scores.polyps],
+    ];
+    if (!ensureSpace(26)) return;
+    rows.forEach((row, index) => drawMetricBar(row[0], row[1], y + index * 8));
+    y += 27;
+    const signals = getClinicalSignals(prediction);
+    let signalText = "Nhãn phụ: dụng cụ " + formatPercent(signals.toolScore) + ", polyp " + formatPercent(signals.polypScore) + ", bất thường niêm mạc " + formatPercent(signals.mucosaAbnormalScore) + ".";
+    if (prediction.polyp.area_ratio) {
+      signalText += " Vùng nghi ngờ chiếm " + Math.round(prediction.polyp.area_ratio * 1000) / 10 + "% ảnh.";
+    }
+    lineText(signalText, margin, y, contentWidth, { size: 8.2, color: COLOR_TEXT_MUTED, maxLines: 2 });
+    y += 11;
+  };
 
-    rows.forEach((row) => {
-      ensureSpace(rowHeight + 2);
-      x = margin;
-      doc.setFillColor(...COLOR_WHITE);
+  const drawEndoscopyRows = () => {
+    if (!section("Mô tả nội soi", "Các mục chính")) return;
+    const rows = ([
+      ["Thực quản", findings?.esophagus || ""],
+      ["Dạ dày", findings?.stomach || ""],
+      ["Tâm vị / phình vị", findings?.cardia_fundus || ""],
+      ["Thân vị", findings?.body || ""],
+      ["Hang vị", findings?.antrum || ""],
+      ["Môn vị", findings?.pylorus || ""],
+      ["Hành tá tràng", findings?.duodenal_bulb || ""],
+      ["Tá tràng", findings?.duodenum || ""],
+      ["Test HP", findings?.hp_test || ""],
+    ] as Array<[string, string]>).filter(([, value]) => value.trim());
+
+    const visibleRows: Array<[string, string]> = rows.length ? rows.slice(0, 7) : [["Ghi nhận", EMPTY_TEXT]];
+    if (rows.length > visibleRows.length) wasClipped = true;
+    for (const [label, value] of visibleRows) {
+      if (!ensureSpace(10)) return;
+      doc.setFillColor(...COLOR_BG_BAND);
       doc.setDrawColor(...COLOR_BORDER_SOFT);
-      doc.rect(margin, y, contentWidth, rowHeight, "S");
-      setFont(true, 9.5, COLOR_TEXT);
-      doc.text(row[0], x + 3, y + 6.8);
-      x += colWidths[0];
-      setFont(false, 9, COLOR_TEXT);
-      doc.text(row[1], x + 3, y + 6.8);
-      x += colWidths[1];
+      doc.roundedRect(margin, y, 42, 8, 1.1, 1.1, "FD");
+      setFont(true, 7.7, COLOR_PRIMARY);
+      doc.text(label, margin + 2.5, y + 5.2);
+      lineText(clipped(value, 105), margin + 46, y + 5.2, contentWidth - 46, { size: 8.1, maxLines: 1 });
+      y += 10;
+    }
+    y += 3;
+  };
 
-      const pct = Math.round(row[2] * 100);
-      // badge tỷ lệ
-      const badgeColor: [number, number, number] = pct >= 60 ? COLOR_PRIMARY : pct >= 30 ? [180, 130, 20] : [120, 130, 145];
-      doc.setFillColor(...badgeColor);
-      const badgeW = 24;
-      const badgeH = 6;
-      doc.roundedRect(x + 3, y + 2, badgeW, badgeH, 1.5, 1.5, "F");
-      setFont(true, 9, COLOR_WHITE);
-      doc.text(`${pct}%`, x + 3 + badgeW / 2, y + 6.2, { align: "center" });
+  const drawConclusion = () => {
+    if (!section("Kết luận và khuyến nghị", "Bác sĩ xác nhận")) return;
+    const conclusion = findings?.conclusion?.trim() || review?.final_diagnosis?.trim() || EMPTY_TEXT;
+    const recommendation = review?.treatment_recommendation?.trim() || EMPTY_TEXT;
+    if (!ensureSpace(45)) return;
+    doc.setFillColor(255, 251, 235);
+    doc.setDrawColor(245, 158, 11);
+    doc.setLineWidth(0.35);
+    doc.roundedRect(margin, y, contentWidth, 36, 2, 2, "FD");
+    doc.setFillColor(...COLOR_ACCENT);
+    doc.rect(margin, y, 2, 36, "F");
+    setFont(true, 8, COLOR_ACCENT);
+    doc.text("KẾT LUẬN", margin + 6, y + 6);
+    lineText(clipped(conclusion, 210), margin + 6, y + 12, contentWidth - 12, { size: 9, bold: true, maxLines: 2 });
+    setFont(true, 8, COLOR_PRIMARY);
+    doc.text("KHUYẾN NGHỊ", margin + 6, y + 25);
+    lineText(clipped(recommendation, 180), margin + 34, y + 25, contentWidth - 40, { size: 8.3, maxLines: 2 });
+    y += 44;
+  };
 
-      y += rowHeight;
-    });
-    y += 5;
-  }
+  const drawSignature = () => {
+    if (!ensureSpace(24)) return;
+    const rightX = pageWidth - margin;
+    setFont(false, 8, COLOR_TEXT_MUTED);
+    doc.text("Ngày xuất hồ sơ", margin, y);
+    setFont(true, 8.5, COLOR_TEXT);
+    doc.text(formatDateTime(new Date().toISOString()), margin, y + 5);
+    setFont(false, 8, COLOR_TEXT_MUTED);
+    doc.text("Bác sĩ nội soi", rightX, y, { align: "right" });
+    doc.setDrawColor(...COLOR_TEXT);
+    doc.line(rightX - 58, y + 15, rightX, y + 15);
+    setFont(false, 7.5, COLOR_TEXT_MUTED);
+    doc.text("(Ký và ghi rõ họ tên)", rightX, y + 19, { align: "right" });
+    y += 22;
+  };
+
+  const drawFooters = () => {
+    const total = doc.getNumberOfPages();
+    for (let page = 1; page <= total; page += 1) {
+      doc.setPage(page);
+      doc.setDrawColor(...COLOR_BORDER_SOFT);
+      doc.line(margin, pageHeight - 9, pageWidth - margin, pageHeight - 9);
+      setFont(false, 7.5, COLOR_TEXT_MUTED);
+      doc.text("Trang " + page + "/" + total, pageWidth - margin, pageHeight - 5, { align: "right" });
+    }
+  };
+
+  const drawImageCard = async (x: number, top: number, w: number, h: number, title: string, src: string) => {
+    doc.setFillColor(...COLOR_WHITE);
+    doc.setDrawColor(...COLOR_BORDER);
+    doc.roundedRect(x, top, w, h, 2, 2, "S");
+    doc.setFillColor(...COLOR_BG_BAND);
+    doc.rect(x, top + h - 8, w, 8, "F");
+    try {
+      const normalized = await normalizeImageDataUrl(src);
+      const props = doc.getImageProperties(normalized.dataUrl);
+      const maxW = w - 4;
+      const maxH = h - 12;
+      const ratio = Math.min(maxW / props.width, maxH / props.height);
+      const imgW = props.width * ratio;
+      const imgH = props.height * ratio;
+      doc.addImage(normalized.dataUrl, normalized.format, x + (w - imgW) / 2, top + 2 + (maxH - imgH) / 2, imgW, imgH);
+    } catch {
+      setFont(false, 8, COLOR_TEXT_MUTED);
+      doc.text("Không đọc được ảnh", x + w / 2, top + h / 2, { align: "center" });
+    }
+    setFont(true, 8, COLOR_PRIMARY);
+    doc.text(title, x + w / 2, top + h - 2.8, { align: "center" });
+  };
+
+  const drawImages = async () => {
+    const overlaySrc = prediction.polyp.overlay_base64 || prediction.inflammation?.overlay_base64 || "";
+    const maskSrc = prediction.polyp.mask_base64 || prediction.inflammation?.mask_base64 || "";
+    const overlayTitle = prediction.polyp.overlay_base64 ? "Overlay polyp" : prediction.inflammation?.overlay_base64 ? "Vùng viêm" : "Overlay";
+    const maskTitle = prediction.polyp.mask_base64 ? "Mask polyp" : prediction.inflammation?.mask_base64 ? "Mask viêm" : "Mask";
+    const images = [
+      { title: "Ảnh gốc", src: item.image_data_url },
+      { title: overlayTitle, src: overlaySrc },
+      { title: maskTitle, src: maskSrc },
+    ].filter((image) => image.src);
+    if (!images.length || !section("Hình ảnh nội soi")) return;
+    if (!ensureSpace(58)) return;
+    const gap = 4;
+    const count = Math.min(images.length, 3);
+    const cardW = (contentWidth - gap * (count - 1)) / count;
+    const cardH = 48;
+    for (let index = 0; index < count; index += 1) {
+      await drawImageCard(margin + index * (cardW + gap), y, cardW, cardH, images[index].title, images[index].src);
+    }
+    y += cardH + 8;
+  };
+
+  drawHeader();
+  drawPatientSummary();
+  drawTwoColumnSummary();
+  await drawImages();
+  drawAiSnapshot();
+  drawEndoscopyRows();
+  drawConclusion();
+  drawSignature();
+  drawFooters();
+
+  return doc;
 }
 
 export function buildHistoryItemFromResult(args: {
