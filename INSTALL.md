@@ -2,8 +2,6 @@
 
 Tài liệu này hướng dẫn **từng bước** để cài đặt và chạy sản phẩm ĐATN **GastroVision AI** — hệ thống nhận diện ảnh nội soi đường tiêu hoá (ResNet-50 + Linear SVM) kết hợp phân đoạn polyp (DeepLabV3+).
 
-> Thời gian cài đặt ước tính: **15–25 phút** (tuỳ tốc độ mạng và máy).
-
 ---
 
 ## 1. Yêu cầu hệ thống
