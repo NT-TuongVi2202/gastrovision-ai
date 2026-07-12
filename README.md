@@ -4,11 +4,10 @@
 
 ---
 
-## Demo nhanh (cho thầy/cô muốn xem ngay)
-
+## Demo nhanh 
 Web đang chạy tại `http://localhost:5174` (đã có sẵn trong repo), backend ở `http://localhost:8080`.
 
-Nếu máy thầy/cô chưa chạy thì kéo xuống mục **"Cài đặt và chạy"** bên dưới.
+Nếu chưa chạy thì kéo xuống mục **"Cài đặt và chạy"** bên dưới.
 
 ### Demo gồm các bước
 
@@ -195,5 +194,5 @@ python training/train_segmentation.py
 - Sinh viên: Nguyễn Thị Tường Vi
 - MSSV: 6351071077
 - GitHub: [@NT-TuongVi2202](https://github.com/NT-TuongVi2202)
-- Trường: ĐH Sư phạm Kỹ thuật TP.HCM
+- Trường: ĐH giao thông vận tải Phân hiệu tại TP Hồ Chí Minh 
 - Báo cáo: xem folder "Báo cáo DATN"
